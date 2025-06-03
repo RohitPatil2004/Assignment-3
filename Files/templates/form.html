@@ -6,11 +6,46 @@
   {% if error %}
     <p style="color:red;">{{ error }}</p>
   {% endif %}
-  <form method="post">
-    Name: <input type="text" name="name" required><br><br>
-    Email: <input type="email" name="email" required><br><br>
+  <form id="dataForm">
+    Name: <input type="text" id="name" name="name" required><br><br>
+    Email: <input type="email" id="email" name="email" required><br><br>
     <input type="submit" value="Submit">
-    <a href="/api"><button type="button">View Data</button></a>
+    <a href="http://localhost:5001/api"><button type="button">View Data</button></a>
   </form>
+
+  <p id="error" style="color:red;"></p>
+
+  <script>
+    const form = document.getElementById('dataForm');
+    const errorPara = document.getElementById('error');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorPara.textContent = '';
+
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+
+      try {
+        const response = await fetch('http://localhost:5001/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, email })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          window.location.href = '/success';
+        } else {
+          errorPara.textContent = result.error || 'An error occurred';
+        }
+      } catch (error) {
+        errorPara.textContent = 'Failed to submit data: ' + error.message;
+      }
+    });
+  </script>
 </body>
 </html>

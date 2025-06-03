@@ -1,14 +1,16 @@
-from flask import Flask, jsonify, request, render_template, redirect, url_for
+from flask import Flask, jsonify, request
 import json
 import pymongo
 from pymongo.errors import PyMongoError
 from urllib.parse import quote_plus
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["http://localhost:5000", "http://127.0.0.1:5000"]}})
 
 # MongoDB Atlas Configuration
-username = quote_plus("rohitvpatil3")  # Replace with your actual username
-password = quote_plus("Rohitpatil@1")   # Replace with your actual password
+username = quote_plus("rohitvpatil3") 
+password = quote_plus("Rohitpatil@1") 
 MONGO_URI = f"mongodb+srv://{username}:{password}@yd.nldhork.mongodb.net/?retryWrites=true&w=majority&appName=yd"
 client = pymongo.MongoClient(MONGO_URI)
 db = client['yd']
@@ -24,24 +26,19 @@ def get_data():
     except FileNotFoundError:
         return jsonify({"error": "Data file not found"}), 404
 
-# Route to render form
-@app.route('/', methods=['GET', 'POST'])
-def form():
-    error = None
-    if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        try:
-            collection.insert_one({"name": name, "email": email})
-            return redirect(url_for('success'))
-        except PyMongoError as e:
-            error = f"An error occurred: {str(e)}"
-    return render_template('form.html', error=error)
-
-# Success Page
-@app.route('/success')
-def success():
-    return render_template('success.html')
+# Route to handle form submission
+@app.route('/submit', methods=['POST'])
+def submit():
+    data = request.get_json()
+    if not data or 'name' not in data or 'email' not in data:
+        return jsonify({"error": "Invalid data"}), 400
+    name = data['name']
+    email = data['email']
+    try:
+        collection.insert_one({"name": name, "email": email})
+        return jsonify({"message": "Data submitted successfully"}), 200
+    except PyMongoError as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=5001, debug=True)
